@@ -360,18 +360,44 @@ select dbo.ContaIngredientiPerPizza(3)
 
 
 
-CREATE VIEW Menu 
-AS
+
+
+CREATE FUNCTION	IngredientiPerPizza
 (
-	SELECT p.Nome, p.Prezzo, i.Nome 'Ingrediente'
+	@ID_Pizza int
+)
+RETURNS VARCHAR(200)
+AS
+BEGIN
+	DECLARE @Ingredienti VARCHAR(200) = ''
+
+	SELECT @Ingredienti += i.Nome + ', '
 	FROM Pizza p
 	JOIN IngredientePizza ingP
 	ON p.Codice_Pizza = ingP.Codice_Pizza
 	JOIN Ingrediente i
 	ON i.Codice_Ingrediente = ingP.Codice_Ingrediente
-	GROUP BY p.Nome, i.Nome, p.Prezzo
+	WHERE p.Codice_Pizza = @ID_Pizza
+	GROUP BY p.Codice_Pizza, i.Nome
+
+	RETURN @Ingredienti
+END
+
+select dbo.IngredientiPerPizza(1)
+
+CREATE VIEW Menu 
+AS
+(
+	SELECT DISTINCT p.Nome, p.Prezzo, dbo.IngredientiPerPizza(p.Codice_Pizza) 'Ingredienti'
+	FROM Pizza p
+	JOIN IngredientePizza ingP
+	ON p.Codice_Pizza = ingP.Codice_Pizza
+	JOIN Ingrediente i
+	ON i.Codice_Ingrediente = ingP.Codice_Ingrediente
+	GROUP BY p.Codice_Pizza, p.Nome, i.Nome, p.Prezzo
 )
+
+
 
 SELECT *
 FROM Menu
-
